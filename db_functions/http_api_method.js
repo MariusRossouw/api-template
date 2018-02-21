@@ -1,9 +1,8 @@
 create or replace function http_api_method(http_req_text text) returns JSON as
 $$
-
- if(!plv8.ufn){
-   var sup = plv8.find_function("plv8_startup");
-   sup();
+if(!plv8.ufn){
+  var sup = plv8.find_function("plv8_startup");
+  sup();
  }
 
   var result = {
@@ -40,12 +39,8 @@ $$
 
   var function_name = '';
   var path_array = http_req.url.split('/');
-  result.path_array = path_array;
-  if(path_array.length == 3){
-    function_name = path_array[2];
-  }
-  if(path_array.length == 4){
-    function_name = path_array[3];
+  if(path_array.length > 1){
+    function_name = path_array[1];
   }
   var path_array2 = function_name.split('?');
   function_name = path_array2[0];
@@ -59,91 +54,10 @@ $$
     return result;
   };
 
-
-  /*
-  TODO: axept, change all GET to POST, and only allow POST
-  or allow only these get
-    profiles_list_admin
-    profiles_list_consumer
-    accounts_list_consumer
-    accounts_get_one
-    accounts_transactions
-    transaction_events
-    master_account_list
-    master_account_get_one
-    contact_us_list
-    login_admin
-    gen_json_get
-    gen_json_list
-  */
-
-  result.data.api_name = http_req.api_name;
-
   if(http_req.api_name && http_req.api_name == '_'){
     function_name = 'http_' + function_name;
   }
 
-  if(http_req.api_name && http_req.api_name == '3rdparty'){
-    temp_function_name = '';
-    for(var i = 2; i < path_array.length; i++){
-      temp_function_name += path_array[i] + '_';
-    }
-
-    function_name = temp_function_name.substr(0,(temp_function_name.length-1));
-    function_name = 'http_3rdparty_' + function_name;
-    result.function_name = function_name;
-  }
-
-  if(
-    http_req.api_name && 
-    (
-      http_req.api_name == 'cobrand'
-      || http_req.api_name == 'user'
-      || http_req.api_name == 'transactions'
-    )
-  ){    
-    var temp_str = path_array[(path_array.length - 1)];
-    temp_path_array = temp_str.split('?');
-    path_array.splice((path_array.length - 1));
-    path_array.push(temp_path_array[0]);
-    temp_function_name = '';
-    for(var i = 2; i < path_array.length; i++){
-      temp_function_name += path_array[i] + '_';
-    }
-
-    function_name = temp_function_name.substr(0,(temp_function_name.length-1));
-    function_name = 'http_' + function_name;
-    result.function_name = function_name;
-  }
-  
-  // if(http_req.api_name && http_req.api_name == 'axept'){
-  //   function_name = 'http_axept_' + function_name;
-  // }
-  // if(http_req.api_name && http_req.api_name == 'business'){
-  //   function_name = 'http_business_' + function_name;
-  // }
-
-  // if(http_req.api_name == ''){
-  //   if(function_name == 'paysafeacqcallback') function_name = 'http_other_paysafe_callback';
-  // }
-
-  // if(http_req.api_name == ''){
-  //   if(function_name == 'paysafeacqcallback') function_name = 'http_other_paysafe_callback';
-  // }
-
-  // if(http_req.api_name == 'axept'){
-  //   if(function_name == 'http_axept_profiles_update_admin') function_name = 'http_axept_profiles_update_one_admin';
-  //   if(function_name == 'http_axept_profiles_update_consumer') function_name = 'http_axept_profiles_update_one_consumer';
-  //   if(function_name == 'http_axept_transaction_events') function_name = 'http_axept_transaction_events_admin';
-  //   if(function_name == 'http_axept_master_account_list') function_name = 'http_axept_master_account_list_admin';
-  //   if(function_name == 'http_axept_master_account_get_one') function_name = 'http_axept_master_account_admin_get_one';
-  // }
-
-  // if(http_req.api_name == 'spika'){
-  //   if(function_name == 'http_spika_email_validate') function_name = 'http_spika_email_verification';
-  //   if(function_name == 'http_spika_send_money_get') function_name = 'http_spika_remits_get_one';
-  //   if(function_name == 'http_spika_receive_money_get') function_name = 'http_spika_remits_get_one';
-  // }
 
   function log_request(){
     var sql = 'insert into tb_api_log (orig_id, type, data, error, create_time, action_type, action_name) values ($1, $2, $3, $4, $5, $6, $7) returning id';
@@ -158,8 +72,6 @@ $$
   };
 
   http_req.function_name = function_name;
-  result.test = 'TEST';
-  http_req.test = 'TEST';
   log_request();
 
   var f = null;
@@ -173,25 +85,9 @@ $$
     return result;
   }
 
-  // var byref = {};
-  // plv8.ufn.resolve_profile_token(http_req, result, byref);
-  // if(result.http_code != 200){
-  //   return(result);
-  // }
-  // var profile = byref.profile;
-
   result = f(JSON.stringify(http_req));
   log_result();
   return result;
-
-/*
-curl -i \
--X POST \
--H "Content-Type: application/json" \
--H "Accept: application/json" \
--s http://localhost:31001/health_check2 \
--d '{"type":"test"}'
-*/
 
 $$ LANGUAGE plv8;
 

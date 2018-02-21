@@ -1,9 +1,9 @@
-create or replace function http_project_list(http_req_text text) returns JSON as
+create or replace function http_profile_list(http_req_text text) returns JSON as
 $$
-if(!plv8.ufn){
-  var sup = plv8.find_function("plv8_startup");
-  sup();
- }
+  if(!plv8.ufn){
+    var sup = plv8.find_function("plv8_startup");
+    sup();
+  }
 
   var result = {
     http_code : 200,
@@ -43,22 +43,22 @@ if(!plv8.ufn){
 
 
   var where = "";
-  if(search.project_name  && search.project_name.length > 0 ){
-      // ?? area_id - they might want to search on that ??
+  if( (search.name  && search.name.length > 0 )){
     where = where + "WHERE ";
     count = 0;
-    if(search.project_name && search.project_name.length > 0){
-      count = count + 1;
-      if(count > 1){
-        where = where + "AND ";
-      }
-      where = where + "p.project_name ~* $" + count.toString() + " ";
-      ex.push(search.project_name);
+
+    if(search.name && search.name.length > 0){
+        count = count + 1;
+        where = where + "(p.first_name ~* $" + count.toString() + " ";
+        ex.push(search.name);
+        count = count + 1;
+        where = where + " OR p.last_name ~* $" + count.toString() + ") ";
+        ex.push(search.name);
     }
     where = where + " ";
   }
   count = count + 1;
-  var limit = "order by p.project_name \
+  var limit = "order by p.first_name \
     limit $" + count.toString() + " ";
 
   count = count + 1;
@@ -66,7 +66,7 @@ if(!plv8.ufn){
 
   var end = ";";
 
-  var s_count = "select count(p.id) cnt from tb_project p " + where + end;
+  var s_count = "select count(p.id) cnt from tb_profile p " + where + end;
 
   var ex1 = [];
   ex1.push(s_count);
@@ -78,25 +78,10 @@ if(!plv8.ufn){
 
   var s_query = " \
     select \
-    p.id, \
-    p.project_name, \
-    p.project_fe_repo_url, \
-    p.project_be_repo_url, \
-    p.project_staging_fe_url, \
-    p.project_staging_be_url, \
-    p.project_staging_db_url, \
-    p.project_staging_server, \
-    p.project_production_fe_url, \
-    p.project_production_be_url, \
-    p.project_production_db_url, \
-    p.project_production_server, \
-    p.project_image, \
-    p.project_description, \
-    p.jdata, \
-    p.create_date, \
-    p.create_time, \
-    p.create_display_time \
-    from tb_project p " + where + limit + offset + end;
+    p.first_name, \
+    p.last_name, \
+    p.id \
+    from tb_profile p " + where + limit + offset + end;
 
   var ex2 = [];
   ex2.push(s_query);
@@ -108,6 +93,12 @@ if(!plv8.ufn){
   var sqlres = plv8.execute.apply(this, ex2);
   var list = sqlres;
 
+  for(var i = 0; i < list.length; i++){
+    list[i].name = list[i].first_name + ' ' + list[i].last_name;
+    delete list[i]["first_name"];
+    delete list[i]["last_name"];
+  }
+
 
   result.data.records = list;
   result.data.offset = offset1;
@@ -117,3 +108,5 @@ if(!plv8.ufn){
   return (result);
 
 $$ LANGUAGE plv8;
+
+

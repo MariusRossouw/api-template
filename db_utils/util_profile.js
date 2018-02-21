@@ -16,9 +16,9 @@
 			return;
 		};
 
-		var sql_insert = 'insert into tb_profile (email, first_name, last_name, password, jdata) ';
-		sql_insert += 'values($1,$2,$3,$4,$5) returning id; ';
-		sql_res = plv8.execute(sql_insert, email, first_name, last_name, password, {create_date : create_time});
+		var sql_insert = 'insert into tb_profile (email, first_name, last_name, password, create_date, create_time, create_display_time) ';
+		sql_insert += 'values($1,$2,$3,$4,$5,$6,$7) returning id; ';
+		sql_res = plv8.execute(sql_insert, email, first_name, last_name, password, create_date, create_time, create_display_time);
 		var profile_id = sql_res.id;
   };
 

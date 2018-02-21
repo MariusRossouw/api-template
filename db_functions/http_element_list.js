@@ -1,9 +1,9 @@
-create or replace function http_project_list(http_req_text text) returns JSON as
+create or replace function http_element_list(http_req_text text) returns JSON as
 $$
-if(!plv8.ufn){
-  var sup = plv8.find_function("plv8_startup");
-  sup();
- }
+  if(!plv8.ufn){
+    var sup = plv8.find_function("plv8_startup");
+    sup();
+  }
 
   var result = {
     http_code : 200,
@@ -32,7 +32,7 @@ if(!plv8.ufn){
   if(http_req.body.offset){
     offset1 = http_req.body.offset;
   };
-  var limit1 = 10;
+  var limit1 = 1000;
   if(http_req.body.limit){
     limit1 = http_req.body.limit;
   };
@@ -43,22 +43,24 @@ if(!plv8.ufn){
 
 
   var where = "";
-  if(search.project_name  && search.project_name.length > 0 ){
-      // ?? area_id - they might want to search on that ??
+  if( (search.element_name  && search.element_name.length > 0 )){
     where = where + "WHERE ";
     count = 0;
-    if(search.project_name && search.project_name.length > 0){
-      count = count + 1;
-      if(count > 1){
-        where = where + "AND ";
-      }
-      where = where + "p.project_name ~* $" + count.toString() + " ";
-      ex.push(search.project_name);
+
+    if(search.element_name && search.element_name.length > 0){
+        count = count + 1;
+        where = where + "(e.element_name ~* $" + count.toString() + " ";
+        ex.push(search.element_name);
+    }
+    if(search.sprint_id && search.sprint_id.length > 0){
+        count = count + 1;
+        where = where + "(e.sprint_id = $" + count.toString() + " ";
+        ex.push(search.sprint_id);
     }
     where = where + " ";
   }
   count = count + 1;
-  var limit = "order by p.project_name \
+  var limit = "order by e.element_name \
     limit $" + count.toString() + " ";
 
   count = count + 1;
@@ -66,7 +68,7 @@ if(!plv8.ufn){
 
   var end = ";";
 
-  var s_count = "select count(p.id) cnt from tb_project p " + where + end;
+  var s_count = "select count(e.id) cnt from tb_element e " + where + end;
 
   var ex1 = [];
   ex1.push(s_count);
@@ -78,25 +80,13 @@ if(!plv8.ufn){
 
   var s_query = " \
     select \
-    p.id, \
-    p.project_name, \
-    p.project_fe_repo_url, \
-    p.project_be_repo_url, \
-    p.project_staging_fe_url, \
-    p.project_staging_be_url, \
-    p.project_staging_db_url, \
-    p.project_staging_server, \
-    p.project_production_fe_url, \
-    p.project_production_be_url, \
-    p.project_production_db_url, \
-    p.project_production_server, \
-    p.project_image, \
-    p.project_description, \
-    p.jdata, \
-    p.create_date, \
-    p.create_time, \
-    p.create_display_time \
-    from tb_project p " + where + limit + offset + end;
+    e.element_name, \
+    e.project_id, \
+    e.sprint_id, \
+    e.expand, \
+    e.image, \
+    e.id \
+    from tb_element e " + where + limit + offset + end;
 
   var ex2 = [];
   ex2.push(s_query);

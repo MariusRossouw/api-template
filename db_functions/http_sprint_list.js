@@ -1,9 +1,9 @@
-create or replace function http_project_list(http_req_text text) returns JSON as
+create or replace function http_sprint_list(http_req_text text) returns JSON as
 $$
-if(!plv8.ufn){
-  var sup = plv8.find_function("plv8_startup");
-  sup();
- }
+  if(!plv8.ufn){
+    var sup = plv8.find_function("plv8_startup");
+    sup();
+  }
 
   var result = {
     http_code : 200,
@@ -21,6 +21,12 @@ if(!plv8.ufn){
     result.message = http_req.err_message;
     return(result);
   }
+
+  if(!http_req.body.search.project_id ){
+    result.http_code = 403;
+    result.message = 'project_id required';
+    return(result);
+  };
 
   var search = {};
 
@@ -43,22 +49,19 @@ if(!plv8.ufn){
 
 
   var where = "";
-  if(search.project_name  && search.project_name.length > 0 ){
-      // ?? area_id - they might want to search on that ??
+  if( (search.project_id  && search.project_id.length > 0 )){
     where = where + "WHERE ";
     count = 0;
-    if(search.project_name && search.project_name.length > 0){
-      count = count + 1;
-      if(count > 1){
-        where = where + "AND ";
-      }
-      where = where + "p.project_name ~* $" + count.toString() + " ";
-      ex.push(search.project_name);
+
+    if(search.project_id && search.project_id.length > 0){
+        count = count + 1;
+        where = where + "s.project_id = $" + count.toString() + " ";
+        ex.push(search.project_id);
     }
     where = where + " ";
   }
   count = count + 1;
-  var limit = "order by p.project_name \
+  var limit = "order by s.sprint_name \
     limit $" + count.toString() + " ";
 
   count = count + 1;
@@ -66,11 +69,15 @@ if(!plv8.ufn){
 
   var end = ";";
 
-  var s_count = "select count(p.id) cnt from tb_project p " + where + end;
+  var s_count = "select count(s.id) cnt from tb_sprint s " + where + end;
 
   var ex1 = [];
   ex1.push(s_count);
   ex1 = ex1.concat(ex);
+
+  // result.stuff = ex1;
+
+  // return (result);
 
   plv8.elog(INFO, JSON.stringify(ex1));
   var sqlres1 = plv8.execute.apply(this, ex1);
@@ -78,25 +85,8 @@ if(!plv8.ufn){
 
   var s_query = " \
     select \
-    p.id, \
-    p.project_name, \
-    p.project_fe_repo_url, \
-    p.project_be_repo_url, \
-    p.project_staging_fe_url, \
-    p.project_staging_be_url, \
-    p.project_staging_db_url, \
-    p.project_staging_server, \
-    p.project_production_fe_url, \
-    p.project_production_be_url, \
-    p.project_production_db_url, \
-    p.project_production_server, \
-    p.project_image, \
-    p.project_description, \
-    p.jdata, \
-    p.create_date, \
-    p.create_time, \
-    p.create_display_time \
-    from tb_project p " + where + limit + offset + end;
+    s.* \
+    from tb_sprint s " + where + limit + offset + end;
 
   var ex2 = [];
   ex2.push(s_query);

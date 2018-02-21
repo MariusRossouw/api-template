@@ -2,11 +2,11 @@ export LC_ALL=C
 cd ~/repos/api-template
 
 export PG_DB_HOST=localhost
-export PG_DB_NAME=yodlee_app
+export PG_DB_NAME=projectManagement2
 export PG_DB_USERNAME=nodejs
 export PG_DB_PASSWORD=glasspen
 export PG_DB_PORT=
-export NODE_SERVER_PORT=31001
+export NODE_SERVER_PORT=31017
 node server.js
 
 
@@ -17,13 +17,13 @@ export PG_DB_USERNAME=nodejs
 export PG_DB_PASSWORD=glasspen
 export PG_DB_PORT=
 # App Port
-export NODE_SERVER_PORT=31001
+export NODE_SERVER_PORT=31017
 node server.js
 
 
 #sean tunnel
 export PG_DB_HOST=localhost
-export PG_DB_NAME=yodlee_app
+export PG_DB_NAME=api_template
 export PG_DB_USERNAME=nodejs
 export PG_DB_PASSWORD=glasspen
 export PG_DB_PORT=10002

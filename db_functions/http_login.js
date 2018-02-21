@@ -33,8 +33,6 @@ $$
   var s = "select id, email, first_name, last_name from tb_profile where email = $1 and password = $2;";
   var query_result = plv8.execute(s,http_req.body.email,http_req.body.password);
 
-  // result.data.query = 'select id, email, first_name, last_name from tb_profile where email = '+http_req.body.email+' and password = '+http_req.body.password+';';
-
   if(query_result.length == 0){
     result.http_code = 403;
     result.message = 'invalid email and password';
@@ -42,6 +40,12 @@ $$
   };
 
   result.data = query_result[0];
+  result.data.authed = true;
+  result.data.navbar = [
+    {to:"/projects", description:"Projects"},
+    {to:"/users", description:"Users"},
+    {to:"/profileDashboard/"+result.data.id, description:result.data.first_name + ' ' +result.data.last_name}
+  ];
 
   return (result);
 $$ LANGUAGE plv8;
